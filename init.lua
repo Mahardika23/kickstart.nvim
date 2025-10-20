@@ -676,7 +676,42 @@ require('lazy').setup({
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
-        -- gopls = {},
+        gopls = {
+          settings = {
+            gopls = {
+              usePlaceholders = true,
+              completeUnimported = true,
+              staticcheck = true,
+              gofumpt = true, -- format style
+              analyses = {
+                unusedparams = true,
+                nilness = true,
+                unusedwrite = true,
+                ST1003 = true,
+              },
+              hints = {
+                assignVariableTypes = true,
+                compositeLiteralFields = true,
+                compositeLiteralTypes = true,
+                constantValues = true,
+                functionTypeParameters = true,
+                parameterNames = true,
+                rangeVariableTypes = true,
+              },
+              directoryFilters = { '-node_modules', '-.git' },
+              codelenses = {
+                gc_details = true,
+                generate = true,
+                regenerate_cgo = true,
+                test = true,
+                tidy = true,
+                upgrade_dependency = true,
+                vendor = true,
+              },
+            },
+          },
+        },
+
         -- pyright = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
@@ -702,6 +737,22 @@ require('lazy').setup({
             },
           },
         },
+        -- PHP (Laravel): Intelephense
+        intelephense = {
+          settings = {
+            intelephense = {
+              files = {
+                maxSize = 5000000,
+                exclude = { '**/node_modules/**', '**/.git/**' },
+              },
+              environment = {
+                phpVersion = '8.4', -- change to your project (e.g. '8.3')
+              },
+              telemetry = { enabled = false },
+              format = { enable = false }, -- use Pint via Conform
+            },
+          },
+        },
       }
 
       -- Ensure the servers and tools above are installed
@@ -720,6 +771,11 @@ require('lazy').setup({
       local ensure_installed = vim.tbl_keys(servers or {})
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
+        -- LSP servers (Mason names)
+        'intelephense',
+        'gopls',
+        'goimports',
+        'gofumpt',
       })
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
@@ -765,18 +821,36 @@ require('lazy').setup({
           return nil
         else
           return {
-            timeout_ms = 500,
+            timeout_ms = 2000,
             lsp_format = 'fallback',
           }
         end
       end,
       formatters_by_ft = {
         lua = { 'stylua' },
-        -- Conform can also run multiple formatters sequentially
-        -- python = { "isort", "black" },
-        --
-        -- You can use 'stop_after_first' to run the first available formatter from the list
         javascript = { 'prettierd', 'prettier', stop_after_first = true },
+        typescript = { 'prettierd', 'prettier', stop_after_first = true },
+        css = { 'prettierd', 'prettier', stop_after_first = true },
+        scss = { 'prettierd', 'prettier', stop_after_first = true },
+        json = { 'prettierd', 'prettier', stop_after_first = true },
+        yaml = { 'prettierd', 'prettier', stop_after_first = true },
+        markdown = { 'prettierd', 'prettier', stop_after_first = true },
+        -- Laravel:
+        php = { 'pint' }, -- uses vendor/bin/pint
+        blade = { 'prettier' }, -- or 'blade-formatter' if you prefer
+        go = { 'gofumpt', 'goimports' },
+      },
+      formatters = {
+        pint = {
+          command = 'vendor/bin/pint',
+          -- You can add args here, e.g. args = { '--preset', 'laravel' }
+        },
+        prettier = {
+          -- Prefer project-local prettier if available
+          prefer_local = 'node_modules/.bin',
+        },
+        gofumpt = { command = 'gofumpt' },
+        goimports = { command = 'goimports' },
       },
     },
   },
@@ -948,7 +1022,26 @@ require('lazy').setup({
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = {
+        'bash',
+        'c',
+        'diff',
+        'html',
+        'lua',
+        'luadoc',
+        'markdown',
+        'markdown_inline',
+        'query',
+        'vim',
+        'vimdoc',
+        'php',
+        'json',
+        'css',
+        'go',
+        'gomod',
+        'gowork',
+        'gosum',
+      },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
